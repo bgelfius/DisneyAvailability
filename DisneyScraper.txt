@@ -1,0 +1,48 @@
+from datetime import datetime
+from dateutil import parser
+import time
+import lxml
+from lxml import html
+
+       
+       page = requests.get(self.buildUrl(Sections.Summary.value), self._headers)
+        xmlpage = html.fromstring(page.content)
+        parsed_rows = []
+        
+        # valuation measures
+        table_rows = xmlpage.xpath("//tr[contains(@class, 'Bxz(bb)')]")
+        #table_rows = xmlpage.xpath("//tr[contains(@class, 'D(itb')]")
+        
+        for table_row in table_rows:
+            parsed_row = []
+            sumval = table_row.xpath("./td")
+            for rs in sumval:
+                val = rs.xpath('.//span/text()[1]')
+                
+                if len(val) < 1:
+                    val2 = table_row.xpath("./td[contains(@class, 'Ta(end')]")
+                    val3 = val2[0].text.split('-')
+                    if len(val3)> 1:
+                        parsed_row.append(val3[0].strip())
+                        val = val3[1].strip()
+                    else:
+                        p = re.compile('(\d+\.\d+) \((\d+\.\d+)')
+                        m =p.match(val2[0].text)
+                        if m:
+                            parsed_row.append(m.group(1))
+                            val = m.group(2)
+                        else:
+                            parsed_row.append(None)
+                            val = None
+
+                        #val = val2[0].text
+
+                parsed_row.append(val)
+
+                            
+            parsed_rows.append(parsed_row)
+
+        self.statisticsFrame = pd.DataFrame(parsed_rows)
+
+        #print(self.statisticsFrame)
+        return 0
